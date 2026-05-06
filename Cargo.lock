@@ -5867,6 +5867,7 @@ dependencies = [
  "astral-version-ranges",
  "axoupdater",
  "backon",
+ "base16ct",
  "base64 0.22.1",
  "byteorder",
  "bytes",
