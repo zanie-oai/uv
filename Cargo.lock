@@ -6845,10 +6845,11 @@ dependencies = [
 name = "uv-macros"
 version = "0.0.43"
 dependencies = [
- "proc-macro2",
  "quote",
+ "serde",
  "syn",
  "textwrap",
+ "uv-options-metadata",
 ]
 
 [[package]]
