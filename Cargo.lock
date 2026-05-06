@@ -6126,6 +6126,7 @@ name = "uv-build-backend"
 version = "0.0.43"
 dependencies = [
  "astral-version-ranges",
+ "base16ct",
  "base64 0.22.1",
  "csv",
  "flate2",

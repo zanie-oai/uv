@@ -439,6 +439,7 @@ pub(crate) fn error_on_venv(file_name: &OsStr, path: &Path) -> Result<(), Error>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base16ct::HexDisplay;
     use flate2::bufread::GzDecoder;
     use fs_err::File;
     use indoc::indoc;
@@ -680,7 +681,7 @@ mod tests {
         );
         // Check that the source dist is reproducible across platforms.
         assert_snapshot!(
-            format!("{:x}", sha2::Sha256::digest(fs_err::read(&source_dist_path).unwrap())),
+            format!("{:x}", HexDisplay(&sha2::Sha256::digest(fs_err::read(&source_dist_path).unwrap()))),
             @"8bed1f7a8059064bcbeedb61a867cca7f63a474306011d0114280de631ac705e"
         );
         // Check both the files we report and the actual files
@@ -734,7 +735,7 @@ mod tests {
         );
         // Check that the wheel is reproducible across platforms.
         assert_snapshot!(
-            format!("{:x}", sha2::Sha256::digest(fs_err::read(&wheel_path).unwrap())),
+            format!("{:x}", HexDisplay(&sha2::Sha256::digest(fs_err::read(&wheel_path).unwrap()))),
             @"dbe56fd8bd52184095b2e0ea3e83c95d1bc8b4aa53cf469cec5af62251b24abb"
         );
         assert_snapshot!(build.wheel_contents.join("\n"), @"
