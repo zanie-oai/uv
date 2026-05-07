@@ -128,3 +128,34 @@ fn format_field(writer: &mut Writer<'_>, field: &Field, value: &dyn fmt::Debug) 
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tracing::{Callsite, Event, Level, field::Value, metadata::Kind};
+    use tracing_subscriber::fmt::FormatFields;
+    use tracing_subscriber::fmt::format::Writer;
+
+    use super::uv_fields;
+
+    #[test]
+    fn strips_ansi_from_message_fields() {
+        let callsite = tracing::callsite! {
+            name: "event",
+            kind: Kind::EVENT,
+            level: Level::TRACE,
+            fields: message
+        };
+        let metadata = callsite.metadata();
+        let message = format_args!("Error trace: {}", "\x1b[36m\x1b[1mhint\x1b[0m");
+        let values = [Some(&message as &dyn Value)];
+        let fields = metadata.fields().value_set_all(&values);
+        let event = Event::new(metadata, &fields);
+        let mut output = String::new();
+
+        uv_fields()
+            .format_fields(Writer::new(&mut output), event)
+            .expect("field formatting should succeed");
+
+        assert_eq!(output, "Error trace: hint");
+    }
+}

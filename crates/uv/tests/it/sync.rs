@@ -47,46 +47,6 @@ fn sync() -> Result<()> {
 }
 
 #[test]
-fn sync_missing_python_trace_hint() -> Result<()> {
-    let context = uv_test::test_context_with_versions!(&[])
-        .with_filtered_python_sources()
-        .with_managed_python_dirs();
-
-    let pyproject_toml = context.temp_dir.child("pyproject.toml");
-    pyproject_toml.write_str(indoc! {r#"
-        [project]
-        name = "project"
-        version = "0.1.0"
-        requires-python = ">=3.14"
-        dependencies = []
-    "#})?;
-
-    let assert = context
-        .sync()
-        .env(EnvVars::RUST_LOG, "uv=trace")
-        .env_remove(EnvVars::RUST_BACKTRACE)
-        .env(EnvVars::UV_PYTHON_DOWNLOADS, "manual")
-        .assert()
-        .failure();
-
-    let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
-    let trace = if let Some((_, rest)) = stderr.split_once("TRACE Error trace: ") {
-        let trace = rest.split_once("\nerror:").map_or(rest, |(trace, _)| trace);
-        format!("TRACE Error trace: {trace}")
-    } else {
-        stderr.to_string()
-    };
-
-    assert_snapshot!(uv_test::apply_filters(trace, context.filters()), @"
-    TRACE Error trace: No interpreter found for Python >=3.14 in [PYTHON SOURCES]
-
-    hint: A managed Python download is available for Python >=3.14, but Python downloads are set to 'manual', use `uv python install >=3.14` to install the required version
-    ");
-
-    Ok(())
-}
-
-#[test]
 fn locked() -> Result<()> {
     let context = uv_test::test_context!("3.12");
 
