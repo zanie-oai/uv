@@ -80,24 +80,6 @@ fn sync_missing_python_trace_hint() -> Result<()> {
     TRACE Error trace: No interpreter found for Python >=3.14 in [PYTHON SOURCES]
 
     hint: A managed Python download is available for Python >=3.14, but Python downloads are set to 'manual', use `uv python install >=3.14` to install the required version
-
-    Stack backtrace:
-       0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from
-       1: uv::commands::project::sync::sync::{{closure}}
-       2: uv::run_project::{{closure}}
-       3: uv::run::{{closure}}::{{closure}}
-       4: <core::pin::Pin<P> as core::future::future::Future>::poll
-       5: tokio::runtime::scheduler::current_thread::Context::enter
-       6: tokio::runtime::context::scoped::Scoped<T>::set
-       7: std::thread::local::LocalKey<T>::with
-       8: tokio::runtime::scheduler::current_thread::CoreGuard::block_on
-       9: tokio::runtime::context::runtime::enter_runtime
-      10: tokio::runtime::runtime::Runtime::block_on
-      11: std::sys::backtrace::__rust_begin_short_backtrace
-      12: core::ops::function::FnOnce::call_once{{vtable.shim}}
-      13: <std::sys::thread::unix::Thread>::new::thread_start
-      14: <unknown>
-      15: <unknown>
     ");
 
     Ok(())

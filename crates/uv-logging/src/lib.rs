@@ -2,9 +2,13 @@ use std::fmt;
 
 use jiff::Timestamp;
 use owo_colors::OwoColorize;
-use tracing::{Event, Subscriber};
+use tracing::{
+    Event, Subscriber,
+    field::{Field, Visit},
+};
+use tracing_subscriber::field::RecordFields;
 use tracing_subscriber::fmt::format::Writer;
-use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields};
+use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields, FormattedFields};
 use tracing_subscriber::registry::LookupSpan;
 
 /// The style of a uv logging line.
@@ -91,5 +95,125 @@ where
         ctx.field_format().format_fields(writer.by_ref(), event)?;
 
         writeln!(writer)
+    }
+}
+
+/// Field formatter for uv logging.
+///
+/// The event formatter is responsible for uv's own log colors, such as the level prefix. Field
+/// values can come from arbitrary `Display` or `Debug` implementations, so strip any ANSI escape
+/// sequences there before writing them to the log line.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct UvFields;
+
+impl<'writer> FormatFields<'writer> for UvFields {
+    fn format_fields<R: RecordFields>(&self, writer: Writer<'writer>, fields: R) -> fmt::Result {
+        let mut visitor = UvFieldsVisitor {
+            writer,
+            is_empty: true,
+            result: Ok(()),
+        };
+        fields.record(&mut visitor);
+        visitor.result
+    }
+
+    fn add_fields(
+        &self,
+        current: &'writer mut FormattedFields<Self>,
+        fields: &tracing::span::Record<'_>,
+    ) -> fmt::Result {
+        if !current.fields.is_empty() {
+            current.fields.push(' ');
+        }
+        self.format_fields(current.as_writer(), fields)
+    }
+}
+
+struct UvFieldsVisitor<'writer> {
+    writer: Writer<'writer>,
+    is_empty: bool,
+    result: fmt::Result,
+}
+
+impl UvFieldsVisitor<'_> {
+    fn record_value(&mut self, field: &Field, value: impl fmt::Display) {
+        if self.result.is_err() {
+            return;
+        }
+
+        if self.is_empty {
+            self.is_empty = false;
+        } else {
+            self.result = write!(self.writer, " ");
+            if self.result.is_err() {
+                return;
+            }
+        }
+
+        let value = value.to_string();
+        let value = anstream::adapter::strip_str(&value);
+        self.result = match field.name() {
+            "message" => write!(self.writer, "{value}"),
+            name if name.starts_with("r#") => {
+                write!(self.writer, "{}={value}", &name[2..])
+            }
+            name => write!(self.writer, "{name}={value}"),
+        };
+    }
+}
+
+impl Visit for UvFieldsVisitor<'_> {
+    fn record_f64(&mut self, field: &Field, value: f64) {
+        self.record_value(field, value);
+    }
+
+    fn record_i64(&mut self, field: &Field, value: i64) {
+        self.record_value(field, value);
+    }
+
+    fn record_u64(&mut self, field: &Field, value: u64) {
+        self.record_value(field, value);
+    }
+
+    fn record_bool(&mut self, field: &Field, value: bool) {
+        self.record_value(field, value);
+    }
+
+    fn record_str(&mut self, field: &Field, value: &str) {
+        if field.name() == "message" {
+            self.record_value(field, value);
+        } else {
+            self.record_value(field, format!("{value:?}"));
+        }
+    }
+
+    fn record_error(&mut self, field: &Field, error: &(dyn std::error::Error + 'static)) {
+        let mut value = error.to_string();
+
+        if let Some(first_source) = error.source() {
+            value.push(' ');
+            value.push_str(field.name());
+            value.push_str(".sources=[");
+
+            let mut source = Some(first_source);
+            let mut first = true;
+            while let Some(error) = source {
+                if first {
+                    first = false;
+                } else {
+                    value.push_str(", ");
+                }
+                value.push_str(&error.to_string());
+                source = error.source();
+            }
+
+            value.push(']');
+        }
+
+        self.record_value(field, value);
+    }
+
+    fn record_debug(&mut self, field: &Field, value: &dyn fmt::Debug) {
+        self.record_value(field, format!("{value:?}"));
     }
 }
