@@ -2819,7 +2819,16 @@ where
     match result {
         Ok(code) => code.into(),
         Err(err) => {
-            trace!("Error trace: {err:?}");
+            let mut error = String::new();
+            for cause in err.chain() {
+                if !error.is_empty() {
+                    error.push_str("\n\nCaused by: ");
+                }
+                let cause = cause.to_string();
+                let cause = anstream::adapter::strip_str(&cause).to_string();
+                error.push_str(cause.trim());
+            }
+            trace!("Error trace: {error}");
             let mut causes = err.chain();
             eprintln!(
                 "{}: {}",
