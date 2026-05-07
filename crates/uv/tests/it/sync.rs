@@ -64,6 +64,7 @@ fn sync_missing_python_trace_hint() -> Result<()> {
     let assert = context
         .sync()
         .env(EnvVars::RUST_LOG, "uv=trace")
+        .env_remove(EnvVars::RUST_BACKTRACE)
         .env(EnvVars::UV_PYTHON_DOWNLOADS, "manual")
         .assert()
         .failure();
