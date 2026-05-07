@@ -107,6 +107,8 @@ pub fn uv_fields() -> impl for<'writer> FormatFields<'writer> {
 }
 
 fn format_field(writer: &mut Writer<'_>, field: &Field, value: &dyn fmt::Debug) -> fmt::Result {
+    // NOTE: The various cases in this function match tracing-subscriber's default field formatting.
+
     let field = field.name();
     if field.starts_with("log.") {
         return Ok(());
@@ -121,6 +123,7 @@ fn format_field(writer: &mut Writer<'_>, field: &Field, value: &dyn fmt::Debug) 
         write!(
             writer,
             "{}={value}",
+            // Render `type=...` instead of `r#type=...`.
             field.strip_prefix("r#").unwrap_or(field)
         )
     }
