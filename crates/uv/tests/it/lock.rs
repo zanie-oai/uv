@@ -12737,8 +12737,7 @@ fn lock_find_links_local_sdist() -> Result<()> {
 #[test]
 fn lock_find_links_http_wheel() -> Result<()> {
     let context = uv_test::test_context!("3.12");
-    let vendor =
-        uv_test::find_links::FindLinksServer::new(&context.workspace_root.join("test/vendor"));
+    let vendor = uv_test::find_links::FindLinksServer::vendor();
 
     let pyproject_toml = context.temp_dir.child("pyproject.toml");
     pyproject_toml.write_str(&formatdoc! { r#"
@@ -12830,8 +12829,7 @@ fn lock_find_links_http_wheel() -> Result<()> {
 #[test]
 fn lock_find_links_http_sdist() -> Result<()> {
     let context = uv_test::test_context!("3.12");
-    let vendor =
-        uv_test::find_links::FindLinksServer::new(&context.workspace_root.join("test/vendor"));
+    let vendor = uv_test::find_links::FindLinksServer::vendor();
 
     let pyproject_toml = context.temp_dir.child("pyproject.toml");
     pyproject_toml.write_str(&formatdoc! { r#"
